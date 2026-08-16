@@ -56,7 +56,10 @@ func (c *Cabin) ApplyReadings(r Readings) {
 	now := time.Now()
 	r.RecordedAt = now
 	c.Readings = &r
-	if c.HasAlarmCondition(r) && c.Status != CabinUnderMaintenance {
+	// Only an idle cabin may be moved into the alarm state.  A cabin that is
+	// locked by a maintenance order or already being repaired keeps its status,
+	// otherwise the new readings would silently drop the maintenance lock.
+	if c.HasAlarmCondition(r) && c.Status == CabinNormal {
 		c.Status = CabinAlarm
 	}
 	c.UpdatedAt = now
