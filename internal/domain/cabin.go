@@ -52,11 +52,17 @@ func (c *Cabin) HasAlarmCondition(r Readings) bool {
 }
 
 // ApplyReadings records measurements and transitions to alarm if breached.
+//
+// Readings are always stored so that live measurements keep flowing in while a
+// repair is in flight, but they must not disturb the cabin's maintenance
+// status: while a work order holds the cabin (locked after dispatch, or under
+// maintenance while the engineer is on site) the cabin stays bound to that
+// order. Only an idle (normal) cabin raises the alarm on a fresh breach.
 func (c *Cabin) ApplyReadings(r Readings) {
 	now := time.Now()
 	r.RecordedAt = now
 	c.Readings = &r
-	if c.HasAlarmCondition(r) && c.Status != CabinUnderMaintenance {
+	if c.HasAlarmCondition(r) && c.Status != CabinLocked && c.Status != CabinUnderMaintenance {
 		c.Status = CabinAlarm
 	}
 	c.UpdatedAt = now
